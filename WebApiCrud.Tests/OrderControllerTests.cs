@@ -1,14 +1,24 @@
 using ecommerce.Model;
 using ecommerce.Services;
-
+using System;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+using System.Linq;
+using Moq;
+using ecommerce.Services.Interface;
+using ecommerce.Controllers;
 namespace WebApiCrud.Tests
 {
     [TestClass]
-    public class OrderServiceTests
+    public class OrderControllerTests
     {
         [TestMethod]
         public void GetOrderByID_filters_by_id()
         {
+            //var orderServiceMock = new Mock<IOrderService>();
+            //var controller = new OrderController(orderServiceMock.Object);
+            var controller = new OrderController(new OrderService());
             //Arrange
             var existingOrder = new Order()
             {
@@ -18,14 +28,15 @@ namespace WebApiCrud.Tests
                 Description = "Description1",
                 Quantity = 1,
             };
-            //No mocking
-            var orderService = new OrderService();
 
             //Act
-            var obj = orderService.GetOrderByID(1);
+            var response = controller.Get(1);
 
             //Assert
-            Assert.IsNotNull(obj);
+            Assert.IsNotNull(response);
+            var obj = (Order)((Microsoft.AspNetCore.Mvc.ObjectResult)response).Value;
+
+
             Assert.IsTrue(obj.Id == existingOrder.Id);
             Assert.IsTrue(obj.FirstName == existingOrder.FirstName);
             Assert.IsTrue(obj.LastName == existingOrder.LastName);
@@ -33,10 +44,11 @@ namespace WebApiCrud.Tests
             Assert.IsTrue(obj.Quantity == existingOrder.Quantity);
 
             //Act
-            var obj2 = orderService.GetOrderByID(2);
+            var response2 = controller.Get(2);
 
             //Assert
-            Assert.IsNull(obj2);
+            var obj2 = ((Microsoft.AspNetCore.Mvc.StatusCodeResult)response2).StatusCode;
+            Assert.IsTrue(obj2 == 404);
         }
 
         [TestMethod]
@@ -51,15 +63,16 @@ namespace WebApiCrud.Tests
                 Quantity = 2,
             };
             //No mocking
-            var orderService = new OrderService();
+            var controller = new OrderController(new OrderService());
 
             //Act
-            var obj = orderService.AddOrder(newOrder);
-            var response = orderService.GetAllOrders();
+            var obj = controller.Post(newOrder);
+            var response = controller.Get();
 
             //Assert
             Assert.IsNotNull(response);
-            Assert.IsTrue(response.Count() == 2);
+            var obj2 = (List<Order>)((Microsoft.AspNetCore.Mvc.ObjectResult)response).Value;
+            Assert.IsTrue(obj2.Count() == 2);
         }
 
         [TestMethod]
@@ -74,19 +87,20 @@ namespace WebApiCrud.Tests
                 Quantity = 2,
             };
             //No mocking
-            var orderService = new OrderService();
+            var controller = new OrderController(new OrderService());
 
             //Act
-            var obj = orderService.AddOrder(newOrder);
-            var response = orderService.GetAllOrders();
+            var obj = controller.Post(newOrder);
+            var response = controller.Get();
 
             //Assert
             Assert.IsNotNull(response);
-            Assert.IsTrue(response.Count() == 2);
+            var obj2 = (List<Order>)((Microsoft.AspNetCore.Mvc.ObjectResult)response).Value;
+            Assert.IsTrue(obj2.Count() == 2);
         }
 
         [TestMethod]
-        public void UpdateOrder_updates_existing_order()
+        public void Put_updates_existing_order()
         {
             //Arrange
             var updatedOrder = new ModifyOrder()
@@ -97,15 +111,16 @@ namespace WebApiCrud.Tests
                 Quantity = 2,
             };
             //No mocking
-            var orderService = new OrderService();
+            var controller = new OrderController(new OrderService());
 
             //Act
-            var response = orderService.UpdateOrder(1, updatedOrder);
-            var obj = orderService.GetOrderByID(1);
+            var response1 = controller.Put(1, updatedOrder);
+            var response = controller.Get(1);
 
             //Assert
-            Assert.IsNotNull(obj);
-            Assert.IsTrue(obj.Id == 1);
+            Assert.IsNotNull(response);
+            var obj = (Order)((Microsoft.AspNetCore.Mvc.ObjectResult)response).Value;
+
             Assert.IsTrue(obj.FirstName == updatedOrder.FirstName);
             Assert.IsTrue(obj.LastName == updatedOrder.LastName);
             Assert.IsTrue(obj.Description == updatedOrder.Description);
@@ -113,7 +128,7 @@ namespace WebApiCrud.Tests
         }
 
         [TestMethod]
-        public void DeleteOrderByID_deletes_order()
+        public void Delete_deletes_order()
         {
             //Arrange
             var newOrder = new ModifyOrder()
@@ -124,22 +139,24 @@ namespace WebApiCrud.Tests
                 Quantity = 2,
             };
             //No mocking
-            var orderService = new OrderService();
+            var controller = new OrderController(new OrderService());
 
             //Act
-            var obj = orderService.AddOrder(newOrder);
-            var response = orderService.GetAllOrders();
+            var obj = controller.Post(newOrder);
+            var response = controller.Get();
 
             //Assert
             Assert.IsNotNull(response);
-            Assert.IsTrue(response.Count() == 2);
+            var obj2 = (List<Order>)((Microsoft.AspNetCore.Mvc.ObjectResult)response).Value;
+            Assert.IsTrue(obj2.Count() == 2);
 
             //Act
-            var objAfterDeletion = orderService.DeleteOrderByID(1);
-            var responseAfterDeletion = orderService.GetOrderByID(1);
+            var objAfterDeletion = controller.Delete(1);
+            var responseAfterDeletion = controller.Get(1);
 
             //Assert
-            Assert.IsNull(responseAfterDeletion);
+            var noFoundStatusCode = ((Microsoft.AspNetCore.Mvc.StatusCodeResult)responseAfterDeletion).StatusCode;
+            Assert.IsTrue(noFoundStatusCode == 404);
         }
     }
 }
