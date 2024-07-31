@@ -5,3 +5,5 @@
 /.vs
 /WebApiCrud/bin/Debug/net8.0
 /WebApiCrud/obj
+/WebApiCrud.Tests/bin
+/WebApiCrud.Tests/obj
